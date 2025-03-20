@@ -1,9 +1,35 @@
 <?php
-// index.php
+// index.php (partie publique)
+
+// Inclure la config et la connexion PDO
 require_once "config.php";
 
-// Récupérer les actualités depuis la base de données
-$stmt = $pdo->query("SELECT * FROM news ORDER BY date_posted DESC");
+// Récupérer le terme de recherche depuis l'URL (s'il existe)
+$search = $_GET['search'] ?? '';
+
+// Préparer la requête pour récupérer seulement les actualités « publiées »
+// ou « planifiées » dont la date de publication est déjà échue.
+// On fait aussi une jointure pour récupérer le nom de la catégorie.
+$sql = "
+    SELECT news.*, categories.name AS category_name
+    FROM news
+    LEFT JOIN categories ON news.category_id = categories.id
+    WHERE 
+        (news.status = 'published')
+        OR 
+        (news.status = 'scheduled' AND news.publish_date <= NOW())
+";
+// On termine la requête par l’ordre de tri
+$sql .= " ORDER BY news.is_pinned DESC, news.publish_date DESC";
+
+$stmt = $pdo->prepare($sql);
+
+// Lier la valeur de recherche si nécessaire
+if (!empty($search)) {
+    $stmt->bindValue(':search', "%$search%", PDO::PARAM_STR);
+}
+
+$stmt->execute();
 $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 ?>
 <!DOCTYPE html>
@@ -16,8 +42,7 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <meta name="author" content="Anomalya Corp" />
     <link rel="icon" href="favicon.ico" />
 
-    <!-- Font Awesome (pour les émojis ou icônes) -->
-    <!-- Font Awesome (pour les émojis ou icônes) -->
+    <!-- Font Awesome (pour les émojis, etc.) -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
 
     <!-- Tailwind CSS -->
@@ -45,19 +70,15 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
     <!-- SweetAlert2 pour la popup -->
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11" defer></script>
 
-    <!-- jQuery (chargé sans defer pour que $ soit disponible dès le début) -->
+    <!-- jQuery (si encore nécessaire pour d'autres scripts) -->
     <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 
-    <!-- Slick Carousel CSS -->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.css"/>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick-theme.css"/>
-
-    <!-- Slick Carousel JS (chargé avec defer) -->
-    <script src="https://cdn.jsdelivr.net/npm/slick-carousel@1.8.1/slick/slick.min.js" defer></script>
+    <!-- Intégration de Swiper (alternative à Slick) -->
+    <link rel="stylesheet" href="https://unpkg.com/swiper@8/swiper-bundle.min.css" />
+    <script src="https://unpkg.com/swiper@8/swiper-bundle.min.js"></script>
 
     <!-- Notre script personnalisé -->
     <script src="js/script.js" defer></script>
-
 </head>
 <body>
 <!-- Détection du paramètre "sent" pour afficher la popup via SweetAlert2 -->
@@ -79,29 +100,54 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
 <!-- Fond animé Particles.js -->
 <div id="particles-js"></div>
 
-<!-- Header -->
-<header class="bg-gray-900 bg-opacity-80 p-5 sticky top-0 z-50" data-aos="fade-down">
-    <div class="container mx-auto flex justify-between items-center">
-        <h1 class="subtle-glow text-4xl font-bold animate__animated animate__fadeInLeft">Anomalya Corp</h1>
-        <nav>
-            <ul class="flex space-x-4 text-lg">
-                <!-- Extensions masquées via .htaccess -->
-                <li><a href="#">Accueil</a></li>
-                <li><a href="#news">Nos Actus</a></li>
-                <li><a href="#services">Services</a></li>
-                <li><a href="#competences">Compétences</a></li>
-                <li><a href="#faq">FAQ</a></li>
-                <li><a href="#temoignages">Témoignages</a></li>
-                <li><a href="#contact">Contact</a></li>
+<header class="bg-gray-900/95 backdrop-blur-sm fixed w-full top-0 z-50">
+    <div class="container mx-auto px-4 py-3 flex justify-between items-center">
+        <h1 class="text-2xl font-bold text-blue-400">Anomalya Corp</h1>
+
+        <!-- Menu Hamburger -->
+        <button id="mobileMenu" class="md:hidden text-2xl text-white">
+            <i class="fas fa-bars"></i>
+        </button>
+
+        <!-- Navigation -->
+        <nav id="mainNav" class="hidden md:block absolute md:relative top-full left-0 w-full md:w-auto bg-gray-900 md:bg-transparent transition-all duration-300">
+            <ul class="flex flex-col md:flex-row text-center py-4 md:py-0 space-y-4 md:space-y-0 md:space-x-6">
+                <li><a href="#hero" class="block px-4 py-2 hover:text-blue-400 transition-colors">Accueil</a></li>
+                <li><a href="#services" class="block px-4 py-2 hover:text-blue-400 transition-colors">Services</a></li>
+                <li><a href="#news" class="block px-4 py-2 hover:text-blue-400 transition-colors">Actualités</a></li>
+                <li><a href="#competences" class="block px-4 py-2 hover:text-blue-400 transition-colors">Compétences</a></li>
+                <li><a href="#contact" class="block px-4 py-2 hover:text-blue-400 transition-colors">Contact</a></li>
             </ul>
         </nav>
     </div>
 </header>
 
+<script>
+    document.getElementById('mobileMenu').addEventListener('click', function() {
+        const nav = document.getElementById('mainNav');
+        nav.classList.toggle('hidden');
+        nav.classList.toggle('mobile-active');
+    });
+</script>
+
+<style>
+    .mobile-active {
+        max-height: 100vh;
+        overflow-y: auto;
+    }
+
+    @media (min-width: 768px) {
+        #mainNav {
+            max-height: none !important;
+        }
+    }
+</style>
+
 <!-- Hero Section -->
 <section id="hero" class="hero-section" data-aos="fade-up">
     <!-- Canvas Three.js (animation 3D) -->
     <canvas id="hero-threejs-canvas"></canvas>
+    <!-- Texte du Hero -->
     <div class="hero-left animate__animated animate__fadeInLeft">
         <h1 class="subtle-glow font-bold mb-4">L'Innovation Numérique</h1>
         <p class="text-gray-300 leading-relaxed mb-4">
@@ -112,45 +158,66 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </section>
 
-
-<!-- Section Actualités (news) -->
+<!-- Section Actualités (news) avec Swiper -->
 <section id="news" class="py-16 px-6 text-center" data-aos="fade-up">
     <div class="container mx-auto">
         <div class="glass p-8">
-            <h2 class="text-4xl font-bold subtle-glow mb-4">Actualités</h2>
+            <h2 class="text-4xl font-bold subtle-glow mb-4">Nos Actus</h2>
             <?php if(count($newsList) > 0): ?>
-                <!-- Carousel Slick -->
-                <div class="news-carousel">
-                    <?php foreach ($newsList as $news): ?>
-                        <div class="px-4">
-                            <div class="bg-gray-900 bg-opacity-70 p-4 rounded">
-                                <?php if(!empty($news['image'])): ?>
-                                    <!-- Image miniature -->
-                                    <div class="mb-4 overflow-hidden rounded mx-auto w-32 h-32">
-                                        <img
-                                                src="<?= htmlspecialchars($news['image']) ?>"
-                                                alt="News Image"
-                                                class="object-cover w-full h-full"
-                                        >
+                <!-- Swiper Container -->
+                <div class="swiper mySwiper">
+                    <!-- Swiper Wrapper -->
+                    <div class="swiper-wrapper">
+                        <?php foreach ($newsList as $news): ?>
+                            <!-- Each Slide -->
+                            <div class="swiper-slide px-4">
+                                <div class="relative bg-gray-900 bg-opacity-70 p-6 rounded min-h-[400px] max-w-sm mx-auto flex flex-col justify-between text-center">
+                                    <!-- Badge épinglée -->
+                                    <?php if (!empty($news['is_pinned']) && $news['is_pinned']): ?>
+                                        <div class="absolute top-2 right-2 bg-red-500 text-white px-2 py-1 rounded text-xs uppercase">
+                                            Épinglée
+                                        </div>
+                                    <?php endif; ?>
+                                    <!-- Image si disponible -->
+                                    <?php if(!empty($news['image'])): ?>
+                                        <div class="mb-4 w-32 h-32 mx-auto overflow-hidden rounded">
+                                            <img src="<?= htmlspecialchars($news['image']) ?>"
+                                                 alt="News Image"
+                                                 class="object-cover w-full h-full">
+                                        </div>
+                                    <?php endif; ?>
+                                    <!-- Titre -->
+                                    <h3 class="text-2xl font-bold mb-2">
+                                        <?= htmlspecialchars($news['title']) ?>
+                                    </h3>
+                                    <!-- Catégorie -->
+                                    <p class="mb-1 text-blue-400">
+                                        <?= !empty($news['category_name']) ? htmlspecialchars($news['category_name']) : 'Sans catégorie' ?>
+                                    </p>
+                                    <!-- Extrait du contenu -->
+                                    <p class="mb-2 text-gray-200 leading-relaxed">
+                                        <?= mb_strimwidth(strip_tags($news['content']), 0, 150, "...") ?>
+                                    </p>
+                                    <!-- Date de publication -->
+                                    <small class="block mb-2 text-gray-400">
+                                        Publié le <?= htmlspecialchars($news['publish_date']) ?>
+                                    </small>
+                                    <!-- Bouton "Voir plus" -->
+                                    <div>
+                                        <a href="news_detail?id=<?= $news['id'] ?>"
+                                           class="button-modern px-4 py-2 inline-block mt-2">
+                                            Voir plus
+                                        </a>
                                     </div>
-                                <?php endif; ?>
-
-                                <h3 class="text-2xl font-bold mb-2">
-                                    <?= htmlspecialchars($news['title']) ?>
-                                </h3>
-
-                                <p class="mb-2 text-gray-200">
-                                    <?= mb_strimwidth(strip_tags($news['content']), 0, 100, "...") ?>
-                                </p>
-                                <small class="block mb-2 text-gray-400">Publié le <?= $news['date_posted'] ?></small>
-
-                                <a href="news_detail?id=<?= $news['id'] ?>"
-                                   class="button-modern px-4 py-2 inline-block">
-                                    Voir plus
-                                </a>
+                                </div>
                             </div>
-                        </div>
-                    <?php endforeach; ?>
+                        <?php endforeach; ?>
+                    </div>
+                    <!-- Swiper Pagination (dots) -->
+                    <div class="swiper-pagination"></div>
+                    <!-- Swiper Navigation -->
+                    <div class="swiper-button-prev"></div>
+                    <div class="swiper-button-next"></div>
                 </div>
             <?php else: ?>
                 <p class="text-gray-300">Aucune actualité pour le moment.</p>
@@ -158,7 +225,6 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
         </div>
     </div>
 </section>
-
 
 <!-- Section "Pourquoi nous choisir ?" -->
 <section id="why" class="py-16 px-6 text-center" data-aos="fade-up">
@@ -191,7 +257,7 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
     </div>
 </section>
 
-<!-- Services Section avec émojis -->
+<!-- Services Section -->
 <section id="services" class="py-16 px-6" data-aos="fade-up">
     <div class="container mx-auto">
         <div class="glass p-8 text-center">
@@ -350,12 +416,22 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
                     <p class="text-gray-300 mb-2"><strong>Horaires :</strong> Lun-Ven : 9h30 - 18h</p>
                     <p class="text-gray-300 mb-2">
                         <strong>Fiche Google :</strong>
-                        <a href="https://www.google.com/maps/place/Anomalya+Corp/@42.6384108,2.869776,19.75z/data=!4m6!3m5!1s0x12b0716624330d73:0x2d1341085e6373fc!8m2!3d42.6384969!4d2.8696716!16s%2Fg%2F11v14hk5wf?entry=ttu&g_ep=EgoyMDI1MDMwOC4wIKXMDSoJLDEwMjExNDUzSAFQAw%3D%3D" target="_blank" rel="noopener" class="text-blue-400 underline">
+                        <a href="https://www.google.com/maps/place/Anomalya+Corp/@42.6384108,2.869776,19.75z/data=!4m6!3m5!1s0x12b0716624330d73:0x2d1341085e6373fc!8m2!3d42.6384969!4d2.8696716!16s%2Fg%2F11v14hk5wf?entry=ttu"
+                           target="_blank"
+                           rel="noopener"
+                           class="text-blue-400 underline">
                             Voir la fiche Google
                         </a>
                     </p>
                     <div class="mt-4">
-                        <iframe src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2892.2019499572384!2d2.8696716157383515!3d42.63849687916602!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12b0716624330d73%3A0x2d1341085e6373fc!2sAnomalya%20Corp!5e0!3m2!1sfr!2sfr!4v1694875196424!5m2!1sfr!2sfr" class="w-full h-48 rounded" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade"></iframe>
+                        <iframe
+                                src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2892.2019499572384!2d2.8696716157383515!3d42.63849687916602!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x12b0716624330d73%3A0x2d1341085e6373fc!2sAnomalya%20Corp!5e0!3m2!1sfr!2sfr!4v1694875196424!5m2!1sfr!2sfr"
+                                class="w-full h-48 rounded"
+                                style="border:0;"
+                                allowfullscreen=""
+                                loading="lazy"
+                                referrerpolicy="no-referrer-when-downgrade">
+                        </iframe>
                     </div>
                 </div>
                 <!-- Formulaire -->
@@ -376,7 +452,9 @@ $newsList = $stmt->fetchAll(PDO::FETCH_ASSOC);
                         <label for="message" class="block mb-1 text-gray-300 text-sm">Message :</label>
                         <textarea id="message" name="message" rows="3" required class="w-full p-2 text-sm rounded"></textarea>
                     </div>
-                    <button type="submit" class="w-full button-modern text-white px-4 py-2 rounded-lg shadow-md">Envoyer</button>
+                    <button type="submit" class="w-full button-modern text-white px-4 py-2 rounded-lg shadow-md">
+                        Envoyer
+                    </button>
                 </form>
             </div>
         </div>

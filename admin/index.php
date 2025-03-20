@@ -70,6 +70,9 @@ if (empty($_SESSION['csrf_token'])) {
     <nav>
         <ul class="flex space-x-4">
             <li>
+                <a href="file_manager" class="button-modern px-4 py-2 hover:bg-red-600">
+                    <i class="fas fa-files-alt mr-2"></i>Files Manager
+                </a>
                 <a href="logout" class="button-modern px-4 py-2 hover:bg-red-600">
                     <i class="fas fa-sign-out-alt mr-2"></i>Déconnexion
                 </a>
@@ -125,6 +128,17 @@ if (empty($_SESSION['csrf_token'])) {
                     <input type="datetime-local" name="publish_date"
                            class="w-full bg-gray-800 rounded-lg p-3 text-white">
                 </div>
+
+                <!-- Ajout du statut -->
+                <div>
+                    <label class="block text-gray-300 mb-2">Statut</label>
+                    <select name="status" class="w-full bg-gray-800 rounded-lg p-3 text-white">
+                        <option value="draft">Brouillon</option>
+                        <option value="published">Publié</option>
+                        <option value="scheduled">Planifié</option>
+                    </select>
+                </div>
+
                 <div>
                     <label class="flex items-center">
                         <input type="checkbox" name="is_pinned" class="mr-2">
@@ -153,9 +167,20 @@ if (empty($_SESSION['csrf_token'])) {
             <?php foreach ($newsList as $news): ?>
                 <div class="news-card bg-gray-800 rounded-xl p-6">
                     <h3 class="text-xl font-semibold"><?= htmlspecialchars($news['title']) ?></h3>
-                    <p class="text-sm"><?= htmlspecialchars($news['category_name'] ?? 'Sans catégorie') ?></p>
-                    <p><?= $news['is_pinned'] ? '<i class="fas fa-thumbtack text-red-400"></i> Épinglée' : '' ?></p>
-                    <a href="edit_news?id=<?= $news['id'] ?>" class="text-blue-400">Modifier</a>
+                    <p class="text-sm">
+                        <?= htmlspecialchars($news['category_name'] ?? 'Sans catégorie') ?>
+                    </p>
+                    <p>
+                        <?= $news['is_pinned'] ? '<i class="fas fa-thumbtack text-red-400"></i> Épinglée' : '' ?>
+                    </p>
+                    <div class="mt-4 flex space-x-4">
+                        <a href="edit_news?id=<?= $news['id'] ?>" class="text-blue-400">Modifier</a>
+                        <a href="delete_news?id=<?= $news['id'] ?>&csrf_token=<?= $_SESSION['csrf_token'] ?>"
+                           class="text-red-400"
+                           onclick="return confirm('Voulez-vous vraiment supprimer cette actualité ?');">
+                            Supprimer
+                        </a>
+                    </div>
                 </div>
             <?php endforeach; ?>
         </div>

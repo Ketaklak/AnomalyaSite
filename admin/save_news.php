@@ -30,13 +30,27 @@ if (!isset($_POST['csrf_token']) || $_POST['csrf_token'] !== $_SESSION['csrf_tok
 $uploadDir = "../uploads/";
 
 // Récupération et sécurisation des données
-$action = $_POST['action']; // "create" ou "update"
-$title = strip_tags(trim($_POST['title']));
-$content = $_POST['content'];
-$category_id = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : NULL;
+$action       = $_POST['action']; // "create" ou "update"
+$title        = strip_tags(trim($_POST['title']));
+$content      = $_POST['content'];
+$category_id  = !empty($_POST['category_id']) ? (int)$_POST['category_id'] : NULL;
 $publish_date = !empty($_POST['publish_date']) ? $_POST['publish_date'] : date('Y-m-d H:i:s');
-$is_pinned = isset($_POST['is_pinned']) ? 1 : 0;
-$status = (strtotime($publish_date) > time()) ? 'scheduled' : 'published';
+$is_pinned    = isset($_POST['is_pinned']) ? 1 : 0;
+
+// Au lieu de forcer "published"/"scheduled", on récupère le statut choisi
+$allowedStatuses = ['draft', 'published', 'scheduled'];
+if (!empty($_POST['status']) && in_array($_POST['status'], $allowedStatuses)) {
+    $status = $_POST['status'];
+} else {
+    // Valeur par défaut
+    $status = 'draft';
+}
+
+// (Optionnel) si vous souhaitez automatiser partiellement en fonction de la date
+// if ($status === 'scheduled' && strtotime($publish_date) <= time()) {
+//     $status = 'published';
+// }
+
 $imagePath = null;
 
 // Traitement de l'upload d'image
@@ -59,13 +73,13 @@ try {
         $stmt = $pdo->prepare("INSERT INTO news (title, content, image, category_id, publish_date, status, is_pinned) 
                                VALUES (:title, :content, :image, :category_id, :publish_date, :status, :is_pinned)");
         $stmt->execute([
-            'title' => $title,
-            'content' => $content,
-            'image' => $imagePath,
-            'category_id' => $category_id,
+            'title'        => $title,
+            'content'      => $content,
+            'image'        => $imagePath,
+            'category_id'  => $category_id,
             'publish_date' => $publish_date,
-            'status' => $status,
-            'is_pinned' => $is_pinned
+            'status'       => $status,
+            'is_pinned'    => $is_pinned
         ]);
 
         $_SESSION['feedback'] = [
@@ -78,29 +92,42 @@ try {
         $id = (int)$_POST['id'];
 
         if ($imagePath) {
-            $stmt = $pdo->prepare("UPDATE news SET title = :title, content = :content, image = :image, category_id = :category_id, 
-                                    publish_date = :publish_date, status = :status, is_pinned = :is_pinned WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE news
+                                   SET title = :title,
+                                       content = :content,
+                                       image = :image,
+                                       category_id = :category_id,
+                                       publish_date = :publish_date,
+                                       status = :status,
+                                       is_pinned = :is_pinned
+                                   WHERE id = :id");
             $stmt->execute([
-                'title' => $title,
-                'content' => $content,
-                'image' => $imagePath,
-                'category_id' => $category_id,
+                'title'        => $title,
+                'content'      => $content,
+                'image'        => $imagePath,
+                'category_id'  => $category_id,
                 'publish_date' => $publish_date,
-                'status' => $status,
-                'is_pinned' => $is_pinned,
-                'id' => $id
+                'status'       => $status,
+                'is_pinned'    => $is_pinned,
+                'id'           => $id
             ]);
         } else {
-            $stmt = $pdo->prepare("UPDATE news SET title = :title, content = :content, category_id = :category_id, 
-                                    publish_date = :publish_date, status = :status, is_pinned = :is_pinned WHERE id = :id");
+            $stmt = $pdo->prepare("UPDATE news
+                                   SET title = :title,
+                                       content = :content,
+                                       category_id = :category_id,
+                                       publish_date = :publish_date,
+                                       status = :status,
+                                       is_pinned = :is_pinned
+                                   WHERE id = :id");
             $stmt->execute([
-                'title' => $title,
-                'content' => $content,
-                'category_id' => $category_id,
+                'title'        => $title,
+                'content'      => $content,
+                'category_id'  => $category_id,
                 'publish_date' => $publish_date,
-                'status' => $status,
-                'is_pinned' => $is_pinned,
-                'id' => $id
+                'status'       => $status,
+                'is_pinned'    => $is_pinned,
+                'id'           => $id
             ]);
         }
 

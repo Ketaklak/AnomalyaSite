@@ -1,0 +1,226 @@
+/* Styles centralisés pour le site */
+
+/* ======= PARTIE GLOBALE (DESKTOP PAR DÉFAUT) ======= */
+
+/* Fond global et Particles.js */
+body {
+    background: linear-gradient(135deg, #0d1117, #1a1b26);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    margin: 0;
+    padding: 0;
+    position: relative;
+    overflow-x: hidden;
+}
+
+#particles-js {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -2;
+    /* Laissez tel quel (transparent) pour voir le dégradé en dessous */
+}
+
+/* Canvas Three.js */
+#hero-threejs-canvas {
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 50%;
+    height: 100%;
+    z-index: -1;
+    overflow: hidden;
+}
+
+/* Texte avec effet de glow */
+.subtle-glow {
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.3);
+}
+
+/* Bouton moderne */
+.button-modern {
+    background: linear-gradient(90deg, #1e90ff, #00b2ff);
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.4);
+    transition: box-shadow 0.3s ease, transform 0.3s ease;
+}
+.button-modern:hover {
+    box-shadow: 0 0 20px rgb(0, 178, 255);
+    transform: scale(1.05);
+}
+
+/* Glass morphism */
+.glass {
+    background: rgba(255, 255, 255, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 0.75rem;
+}
+
+/* Header */
+header {
+    backdrop-filter: blur(8px);
+}
+
+/* FAQ */
+.faq-item {
+    border: none;
+    border-radius: 0.75rem;
+    overflow: hidden;
+    margin-bottom: 1rem;
+    background: rgba(30, 41, 59, 0.8);
+}
+.faq-question {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+.faq-question:hover {
+    background-color: rgba(51, 65, 85, 0.8);
+}
+.faq-answer {
+    padding: 1rem;
+    background: rgba(13, 17, 23, 0.8);
+    display: none;
+}
+
+/* Compétences (badges) */
+.badge {
+    background-color: #1e90ff;
+    color: #ffffff;
+    padding: 0.5rem 1rem;
+    border-radius: 9999px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin: 0.25rem;
+    display: inline-block;
+}
+
+/* Inputs et textarea */
+input,
+textarea {
+    background: rgba(31, 41, 55, 0.8);
+    border: 1px solid rgba(55, 65, 81, 0.8);
+    color: #ffffff;
+    border-radius: 0.5rem;
+    padding: 0.5rem;
+    transition: border 0.3s ease;
+}
+input:focus,
+textarea:focus {
+    border-color: #1e90ff;
+    outline: none;
+}
+
+/* Grille des services */
+.services-grid {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(200px, 1fr));
+    gap: 1rem;
+}
+.services-grid img {
+    border-radius: 0.5rem;
+}
+
+/* Section Hero */
+.hero-section {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    position: relative;
+    overflow: hidden;
+}
+.hero-left {
+    width: 50%;
+    padding: 2rem;
+    z-index: 1;
+}
+.hero-left h1 {
+    font-size: 3rem;
+}
+.hero-left p {
+    font-size: 1rem;
+    margin-bottom: 1rem;
+}
+
+/* Section "Pourquoi nous choisir ?" */
+.why-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    justify-content: center;
+    align-items: stretch;
+}
+.feature-card {
+    width: 16rem;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 1rem;
+    gap: 0.5rem;
+}
+.feature-icon {
+    font-size: 2rem;
+    color: #00b2ff;
+}
+
+/* Icônes pour les services */
+.service-icon {
+    font-size: 4rem;
+    color: #00b2ff;
+    margin-bottom: 1rem;
+}
+
+/* ======= RESPONSIVITÉ LARGE (max-width: 1024px) ======= */
+@media (max-width: 1024px) {
+    .hero-section {
+        flex-direction: column;
+        min-height: auto;
+    }
+    .hero-left {
+        width: 100%;
+    }
+    #hero-threejs-canvas {
+        position: relative;
+        width: 100%;
+        height: 400px;
+        right: 0;
+    }
+    .services-grid {
+        grid-template-columns: repeat(2, minmax(200px, 1fr));
+    }
+}
+
+/* ======= RESPONSIVITÉ PLUS PETITE (max-width: 768px) ======= */
+@media (max-width: 768px) {
+    /* On force le même fond sombre au cas où un style
+       blanc s'incrusterait sur mobile */
+    html, body {
+        background: linear-gradient(135deg, #0d1117, #1a1b26) !important;
+    }
+    #particles-js {
+        background: transparent !important;
+    }
+
+    /* Hero */
+    .hero-left {
+        padding: 1rem;
+    }
+    .hero-left h1 {
+        font-size: 2rem;
+    }
+    #hero-threejs-canvas {
+        width: 100%;
+        height: 300px;
+    }
+
+    /* Grille des services : 1 colonne */
+    .services-grid {
+        grid-template-columns: 1fr;
+    }
+}

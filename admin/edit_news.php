@@ -111,8 +111,20 @@ $categories = $pdo->query("SELECT * FROM categories")->fetchAll(PDO::FETCH_ASSOC
 
         <div>
             <label class="block text-gray-300 mb-2">Date de publication</label>
-            <input type="datetime-local" name="publish_date" value="<?= date('Y-m-d\TH:i', strtotime($news['publish_date'])) ?>"
+            <input type="datetime-local"
+                   name="publish_date"
+                   value="<?= date('Y-m-d\TH:i', strtotime($news['publish_date'])) ?>"
                    class="w-full bg-gray-800 rounded-lg p-3 text-white">
+        </div>
+
+        <!-- Ajout du statut -->
+        <div>
+            <label class="block text-gray-300 mb-2">Statut</label>
+            <select name="status" class="w-full bg-gray-800 rounded-lg p-3 text-white">
+                <option value="draft"     <?= ($news['status'] === 'draft')     ? 'selected' : '' ?>>Brouillon</option>
+                <option value="published" <?= ($news['status'] === 'published') ? 'selected' : '' ?>>Publié</option>
+                <option value="scheduled" <?= ($news['status'] === 'scheduled') ? 'selected' : '' ?>>Planifié</option>
+            </select>
         </div>
 
         <div>
